@@ -32,11 +32,15 @@ void printMap(tile ** map, int rows, int cols) {
 
             /* check tile in position */
             if(map[i][j].is_flag == true) {
+                attron(COLOR_PAIR(9));
                 mvaddch(i, j, '!');
+                attroff(COLOR_PAIR(9));
             }
 
             else if(map[i][j].is_hidden == true) {
-                mvaddch(i, j, '-');
+                attron(A_DIM);
+                mvaddch(i, j, '\'');
+                attroff(A_DIM);
             }
 
             else if(map[i][j].is_bomb == true) {
@@ -47,7 +51,11 @@ void printMap(tile ** map, int rows, int cols) {
                 mvaddch(i, j, ' ');
             }
 
-            else mvaddch(i, j, map[i][j].value + '0');
+            else {
+                attron(COLOR_PAIR(map[i][j].value));
+                mvaddch(i, j, map[i][j].value + '0');
+                attroff(COLOR_PAIR(map[i][j].value));
+            }
         }
     }
 
@@ -80,9 +88,20 @@ void debugMap(tile ** map, int rows, int cols) {
     getch();
 }
 
+void openTile(tile ** map, int rows, int cols, int y, int x) {
+    if(map[y][x].is_hidden == true) revealTiles(map, rows, cols, y, x);
+    else chord(map, rows, cols, y, x);
+}
+
 void revealTiles(tile ** map, int rows, int cols, int y, int x) {
     /* if tile is not in map */
     if(y < 0 || y >= rows || x < 0 || x >= cols) {
+        return;
+    }
+
+    /* if tile is flag */
+    if(map[y][x].is_flag == true) {
+        map[y][x].is_flag = false;
         return;
     }
 
@@ -100,10 +119,59 @@ void revealTiles(tile ** map, int rows, int cols, int y, int x) {
                 revealTiles(map, rows, cols, y + i, x + j);
             }
         }
+
+        return;
+    }
+
+    if(map[y][x].is_bomb == true) {
+        lose(map, rows, cols);
     }
 }
 
-void setBombs(tile ** map, int rows, int cols, int bomb_number) {
+void chord(tile ** map, int rows, int cols, int y, int x) {
+    /* if tile is not in map */
+    if(y < 0 || y >= rows || x < 0 || x >= cols) {
+        return;
+    }
+    
+    int near_flags = searchFlags(map, rows, cols, y, x);
+
+    if(map[y][x].value == near_flags) {
+        for(int i = -1; i < 2; i++) {
+            for(int j = -1; j < 2; j++) {
+                if(canChord(map, rows, cols, y + i, x + j)) {
+                    revealTiles(map, rows, cols, y + i, x + j);
+                }
+            }
+        }
+    }
+}
+
+bool canChord(tile ** map, int rows, int cols, int y, int x) {
+    if(y < 0 || y >= rows || x < 0 || x >= cols) {
+        return false;
+    }
+
+    if(map[y][x].is_hidden == true && map[y][x].is_flag == false) {
+        return true;
+    }
+
+    return false;
+}
+
+void putFlag(tile ** map, int rows, int cols, int y, int x) {
+    if(map[y][x].is_flag == false && map[y][x].is_hidden == true) {
+        map[y][x].is_flag = true;
+        mvaddch(rows + 2, 2, 'a');
+        return;
+    }
+
+    else {
+        map[y][x].is_flag = false;
+    }
+}
+
+void setBombs(tile ** map, int rows, int cols, int safe_y, int safe_x, int bomb_number) {
     int rand_y, rand_x;
     
 
@@ -112,7 +180,7 @@ void setBombs(tile ** map, int rows, int cols, int bomb_number) {
         rand_y = rand() % rows; rand_x = rand() % cols;
 
         /* if tile chosen has no bomb, place one there */
-        if(map[rand_y][rand_x].is_bomb == false) {
+        if(map[rand_y][rand_x].is_bomb == false  && (rand_y != safe_y && rand_x != safe_x)) {
             map[rand_y][rand_x].is_bomb = true;
             map[rand_y][rand_x].value = -1;
         }
@@ -169,4 +237,51 @@ int searchBombs(tile ** map, int rows, int cols, int y, int x) {
     }
 
     return bombs_found;
+}
+
+int searchFlags(tile ** map, int rows, int cols, int y, int x) {
+    int i_start, i_end, j_start, j_end;
+    int flags_found = 0;
+
+    i_start = y - 1; i_end = y + 1;
+    j_start = x - 1; j_end = x + 1;
+
+    /* check if y value is close to the border */
+    if(i_start < 0) {
+        i_start = 0;
+    }
+
+    if(i_end >= rows) {
+        i_end = rows - 1;
+    }
+
+    /* check same for x */
+    if(j_start < 0) {
+        j_start = 0;
+    }
+
+    if(j_end >= cols) {
+        j_end = cols - 1;
+    }
+
+    /* check nearby tiles */
+    for(int i = i_start; i <= i_end; i++) {
+        for(int j = j_start; j <= j_end; j++) {
+            if(map[i][j].is_flag == true) {
+                flags_found++;
+            }
+        }
+    }
+
+    return flags_found;
+}
+
+void lose(tile ** map, int rows, int cols) {
+    for(int i = 0; i < rows; i++) {
+        for(int j = 0; j < cols; j++) {
+            map[i][j].is_hidden = false;
+        }
+    }
+
+    printMap(map, rows, cols);
 }
