@@ -7,13 +7,14 @@
 
 #include "tile.h"
 
-/* main takes command line arguments: playing area (default: 10), bombs (default: 1/5 of total playing area)*/
+/* main takes command line arguments */
 int main() {
     int size_y = 20;
-    int size_x = 50;
+    int size_x = 40;
     int area = size_y * size_x;
     int bomb_number = (int)(area / 6);
     tile ** map;
+    bool has_lost = false;
 
     /* starts ncurses */
     WINDOW * main_win = initscr();
@@ -35,7 +36,6 @@ int main() {
     init_pair(8, COLOR_WHITE, COLOR_BLACK);
     init_pair(9, COLOR_BLACK, COLOR_RED); // flags
 
-
     /* sets up mouse input */
 
     /* starts randomization */
@@ -51,8 +51,7 @@ int main() {
 
     /* game loop */
     do{
-        printMap(map, size_y, size_x);
-        mvprintw(2, size_x + 2, "%d, %d", y_pos, x_pos);
+        printMap(map, size_y, size_x, 0);
         move(y_pos, x_pos);
         player_input = getch();
 
@@ -81,20 +80,35 @@ int main() {
 
             case KEY_MOUSE:
              if(getmouse(& mouse_input) == OK) {
+                y_pos = mouse_input.y;
+                x_pos = mouse_input.x;
+
                 if(mouse_input.bstate & BUTTON1_CLICKED) {
                     if(is_map_gen == false) {
-                        setBombs(map, size_y, size_x, mouse_input.y, mouse_input.x, bomb_number);
+                        setBombs(map, size_y, size_x, y_pos, x_pos, bomb_number);
                         setValues(map, size_y, size_x);
                         is_map_gen = true;
                     }
-                    openTile(map, size_y, size_x, mouse_input.y, mouse_input.x); break;
+                  has_lost = openTile(map, size_y, size_x, y_pos, x_pos); break;
+                  mvprintw(size_y + 2, 2, "%d", has_lost);
                 }
 
                 if(mouse_input.bstate & BUTTON3_CLICKED) {
-                    putFlag(map, size_y, size_x, mouse_input.y, mouse_input.x); break;
+                    putFlag(map, size_y, size_x, y_pos, x_pos); break;
                 }
              }
         }
+
+        if(has_lost == true) {
+            do {
+            mvprintw(size_y + 2, 2, "You lost! Press q to exit.");
+            printMap(map, size_y, size_x, 1);
+            player_input = getch();
+            } while(player_input != 'q' && player_input != 'Q');
+
+            break;
+        }
+
     } while(player_input != 'q' && player_input != 'Q');
 
     /* closes ncurses window */

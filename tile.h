@@ -9,12 +9,12 @@ typedef struct _tile {
 } tile;
 
 tile ** createTileMap(int rows, int cols);
-void printMap(tile ** map, int rows, int cols);
+void printMap(tile ** map, int rows, int cols, int print_option);
 void debugMap(tile ** map, int rows, int cols);
 
-void openTile(tile ** map, int rows, int cols, int y, int x);
-void revealTiles(tile ** map, int rows, int cols, int y, int x);
-void chord(tile ** map, int rows, int cols, int y, int x);
+bool openTile(tile ** map, int rows, int cols, int y, int x);
+bool revealTiles(tile ** map, int rows, int cols, int y, int x);
+bool chord(tile ** map, int rows, int cols, int y, int x);
 bool canChord(tile ** map, int rows, int cols, int y, int x);
 void putFlag(tile ** map, int rows, int cols, int y, int x);
 
@@ -23,5 +23,3 @@ void setValues(tile ** map, int rows, int cols);
 
 int searchBombs(tile ** map, int rows, int cols, int y, int x);
 int searchFlags(tile ** map, int rows, int cols, int y, int x);
-
-void lose(tile ** map, int rows, int cols);
