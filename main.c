@@ -8,9 +8,19 @@
 #include "tile.h"
 
 /* main takes command line arguments */
-int main() {
+int main(int argc, char * argv[]) {
+    /* default values */
     int size_y = 20;
     int size_x = 40;
+
+    /* checks for more cl arguments */
+    if(argc > 1) {
+        if(argc == 3) {
+            size_x = atoi(argv[1]);
+            size_y = atoi(argv[2]);
+        }
+    }
+    
     int area = size_y * size_x;
     int bomb_number = (int)(area / 6);
     tile ** map;
@@ -73,7 +83,7 @@ int main() {
                 setValues(map, size_y, size_x);
                 is_map_gen = true;
             }
-            openTile(map, size_y, size_x, y_pos, x_pos); break;
+            has_lost = openTile(map, size_y, size_x, y_pos, x_pos); break;
 
             case 'x': case 'X':
             putFlag(map, size_y, size_x, y_pos, x_pos); break;
@@ -83,6 +93,12 @@ int main() {
                 y_pos = mouse_input.y;
                 x_pos = mouse_input.x;
 
+                /* check if position is valid */
+                if(y_pos < 0) break;
+                else if(y_pos >= size_y) break;
+                if(x_pos < 0) break;
+                else if(x_pos >= size_x) break;
+
                 if(mouse_input.bstate & BUTTON1_CLICKED) {
                     if(is_map_gen == false) {
                         setBombs(map, size_y, size_x, y_pos, x_pos, bomb_number);
@@ -90,7 +106,6 @@ int main() {
                         is_map_gen = true;
                     }
                   has_lost = openTile(map, size_y, size_x, y_pos, x_pos); break;
-                  mvprintw(size_y + 2, 2, "%d", has_lost);
                 }
 
                 if(mouse_input.bstate & BUTTON3_CLICKED) {
@@ -99,10 +114,26 @@ int main() {
              }
         }
 
+        /* check if movement is valid */
+        if(y_pos < 0) y_pos++;
+        else if(y_pos >= size_y) y_pos--;
+        if(x_pos < 0) x_pos++;
+        else if(x_pos >= size_x) x_pos--;
+
         if(has_lost == true) {
             do {
             mvprintw(size_y + 2, 2, "You lost! Press q to exit.");
             printMap(map, size_y, size_x, 1);
+            player_input = getch();
+            } while(player_input != 'q' && player_input != 'Q');
+
+            break;
+        }
+
+        if(checkWin(map, size_y, size_x) == true) {
+            do {
+            printMap(map, size_y, size_x, 0);
+            mvprintw(size_y + 2, 2, "You won!! Press q to exit.");
             player_input = getch();
             } while(player_input != 'q' && player_input != 'Q');
 

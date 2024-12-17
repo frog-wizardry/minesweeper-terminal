@@ -150,17 +150,23 @@ bool chord(tile ** map, int rows, int cols, int y, int x) {
         return false;
     }
     
+    bool has_lost = false;
     int near_flags = searchFlags(map, rows, cols, y, x);
 
     if(map[y][x].value == near_flags) {
-        for(int i = -1; i < 2; i++) {
-            for(int j = -1; j < 2; j++) {
-                if(canChord(map, rows, cols, y + i, x + j)) {
-                    return revealTiles(map, rows, cols, y + i, x + j);
-                }
+    
+    for(int i = -1; i < 2; i++) {
+        for(int j = -1; j < 2; j++) {
+            if(canChord(map, rows, cols, y + i, x + j)) {
+            if(revealTiles(map, rows, cols, y + i, x + j) == true) {
+                has_lost = true;
+            }
             }
         }
     }
+    }
+
+    return has_lost;
 }
 
 bool canChord(tile ** map, int rows, int cols, int y, int x) {
@@ -205,6 +211,18 @@ void setBombs(tile ** map, int rows, int cols, int safe_y, int safe_x, int bomb_
             i--;
         }
     }
+}
+
+bool checkWin(tile ** map, int rows, int cols) {
+    for(int i = 0; i < rows; i++) {
+        for(int j = 0; j < cols; j++) {
+            if(map[i][j].is_hidden == true && map[i][j].is_bomb == false) {
+                return false;
+            }
+        }
+    }
+
+    return true;
 }
 
 void setValues(tile ** map, int rows, int cols) {
