@@ -10,8 +10,8 @@
 /* main takes command line arguments */
 int main(int argc, char * argv[]) {
     /* default values */
-    int size_y = 20;
-    int size_x = 40;
+    int size_y = 16;
+    int size_x = 30;
 
     /* checks for more cl arguments */
     if(argc > 1) {
@@ -22,9 +22,10 @@ int main(int argc, char * argv[]) {
     }
     
     int area = size_y * size_x;
-    int bomb_number = (int)(area / 6);
+    int bomb_number = (int)(area / 4.8) - 1;
     tile ** map;
     bool has_lost = false;
+    time_t start, end;
 
     /* starts ncurses */
     WINDOW * main_win = initscr();
@@ -79,9 +80,14 @@ int main(int argc, char * argv[]) {
 
             case 'z': case 'Z':
             if(is_map_gen == false) {
+                /* creates map after first click */
                 setBombs(map, size_y, size_x, y_pos, x_pos, bomb_number);
                 setValues(map, size_y, size_x);
+
                 is_map_gen = true;
+
+                /* gets starting time */
+                time(&start);
             }
             has_lost = openTile(map, size_y, size_x, y_pos, x_pos); break;
 
@@ -94,16 +100,21 @@ int main(int argc, char * argv[]) {
                 x_pos = mouse_input.x;
 
                 /* check if position is valid */
-                if(y_pos < 0) break;
-                else if(y_pos >= size_y) break;
-                if(x_pos < 0) break;
-                else if(x_pos >= size_x) break;
+                if(y_pos < 0) y_pos = 0;
+                else if(y_pos >= size_y) y_pos = size_y - 1;
+                if(x_pos < 0) x_pos = 0;
+                else if(x_pos >= size_x) x_pos = size_x - 1;
 
                 if(mouse_input.bstate & BUTTON1_CLICKED) {
                     if(is_map_gen == false) {
+                        /* creates map after first click */
                         setBombs(map, size_y, size_x, y_pos, x_pos, bomb_number);
                         setValues(map, size_y, size_x);
+
                         is_map_gen = true;
+
+                        /* gets starting time */
+                        time(&start);
                     }
                   has_lost = openTile(map, size_y, size_x, y_pos, x_pos); break;
                 }
@@ -121,8 +132,9 @@ int main(int argc, char * argv[]) {
         else if(x_pos >= size_x) x_pos--;
 
         if(has_lost == true) {
+            time(&end);
             do {
-            mvprintw(size_y + 2, 2, "You lost! Press q to exit.");
+            mvprintw(size_y + 2, 2, "You lost in %ld seconds! Press q to exit.", end - start);
             printMap(map, size_y, size_x, 1);
             player_input = getch();
             } while(player_input != 'q' && player_input != 'Q');
@@ -131,9 +143,10 @@ int main(int argc, char * argv[]) {
         }
 
         if(checkWin(map, size_y, size_x) == true) {
+            time(&end);
             do {
             printMap(map, size_y, size_x, 0);
-            mvprintw(size_y + 2, 2, "You won!! Press q to exit.");
+            mvprintw(size_y + 2, 2, "You won in %ld seconds!! Press q to exit.", end - start);
             player_input = getch();
             } while(player_input != 'q' && player_input != 'Q');
 
